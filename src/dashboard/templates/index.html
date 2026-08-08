@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AHRE - Adaptive Human Risk Engine</title>
+    <!-- Google Fonts & Chart.js -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --card-bg: rgba(18, 26, 44, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --text-primary: #f1f5f9;
+            --text-muted: #94a3b8;
+            --critical-red: #ff4757;
+            --high-orange: #ffa502;
+            --medium-yellow: #eccc68;
+            --low-green: #2ed573;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(255, 71, 87, 0.08) 0%, transparent 40%);
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .shield-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #ffffff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(46, 213, 115, 0.1);
+            border: 1px solid rgba(46, 213, 115, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--low-green);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--low-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--low-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 14px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 242, 254, 0.3);
+        }
+
+        .kpi-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Main Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* User Table */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .user-table th {
+            text-align: left;
+            padding: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .user-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .user-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .badge-CRITICAL { background: rgba(255, 71, 87, 0.2); color: var(--critical-red); border: 1px solid rgba(255, 71, 87, 0.4); }
+        .badge-HIGH { background: rgba(255, 165, 2, 0.2); color: var(--high-orange); border: 1px solid rgba(255, 165, 2, 0.4); }
+        .badge-MEDIUM { background: rgba(236, 204, 104, 0.2); color: var(--medium-yellow); border: 1px solid rgba(236, 204, 104, 0.4); }
+        .badge-LOW { background: rgba(46, 213, 115, 0.2); color: var(--low-green); border: 1px solid rgba(46, 213, 115, 0.4); }
+
+        .score-bar-bg {
+            width: 80px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .btn-inspect {
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-inspect:hover {
+            background: rgba(0, 242, 254, 0.25);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #131b2e;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 16px;
+            width: 500px;
+            max-width: 90%;
+            padding: 24px;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .explanation-box {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            color: #ff6b81;
+            margin-top: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo-title">
+            <div class="shield-icon">🛡️</div>
+            <div>
+                <h1>Adaptive Human Risk Engine (AHRE)</h1>
+                <p>Real-Time User Behavioral Profiling & Dynamic Risk Scoring</p>
+            </div>
+        </div>
+        <div class="status-badge">
+            <div class="pulse-dot"></div> Engine Active & Monitoring
+        </div>
+    </div>
+
+    <!-- KPI Section -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-title">Monitored Users</div>
+            <div class="kpi-value" id="kpi-users">--</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Critical Threats</div>
+            <div class="kpi-value" style="color: var(--critical-red);" id="kpi-critical">--</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Average Risk Score</div>
+            <div class="kpi-value" style="color: var(--accent-cyan);" id="kpi-avg">--</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Total Logged Events</div>
+            <div class="kpi-value" id="kpi-events">--</div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+        <!-- User Risk Rankings -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">⚠️ User Threat Profiles & Risk Rankings</div>
+            </div>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Risk Category</th>
+                        <th>Dynamic Risk Score</th>
+                        <th>Off-Hours</th>
+                        <th>Failed Logins</th>
+                        <th>USB Connections</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading user profiles...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Risk Timeline Chart -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">📈 Selected User Risk Trend</div>
+            </div>
+            <canvas id="timelineChart" height="220"></canvas>
+        </div>
+    </div>
+
+    <!-- XAI Explanation Modal -->
+    <div class="modal-overlay" id="xaiModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color: var(--accent-cyan);" id="modalUserTitle">USER0007 Risk Analysis</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 14px;">Explainable AI (XAI) Attribution Breakdown:</p>
+            <div class="explanation-box" id="modalExplanationText">
+                Analyzing risk factors...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+
+        async function fetchKPIs() {
+            try {
+                const res = await fetch('/api/kpi');
+                const data = await res.json();
+                document.getElementById('kpi-users').innerText = data.total_users;
+                document.getElementById('kpi-critical').innerText = data.critical_threats;
+                document.getElementById('kpi-avg').innerText = data.avg_risk + " / 100";
+                document.getElementById('kpi-events').innerText = data.total_events.toLocaleString();
+            } catch(e) { console.error(e); }
+        }
+
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                const tbody = document.getElementById('user-table-body');
+                tbody.innerHTML = '';
+
+                users.forEach(u => {
+                    let color = u.risk_score >= 75 ? 'var(--critical-red)' : 
+                               (u.risk_score >= 50 ? 'var(--high-orange)' : 
+                               (u.risk_score >= 25 ? 'var(--medium-yellow)' : 'var(--low-green)'));
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="user-id">${u.user}</td>
+                        <td><span class="badge badge-${u.risk_category}">${u.risk_category}</span></td>
+                        <td>
+                            <div class="score-bar-bg">
+                                <div class="score-bar-fill" style="width: ${u.risk_score}%; background: ${color};"></div>
+                            </div>
+                            <span style="font-family: 'JetBrains Mono'; font-weight: 600; color: ${color}">${u.risk_score}</span>
+                        </td>
+                        <td>${u.off_hours_logins}</td>
+                        <td>${u.failed_logins}</td>
+                        <td>${u.usb_connect_count}</td>
+                        <td><button class="btn-inspect" onclick="inspectUser('${u.user}', '${u.explanation}')">XAI Explain</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                if(users.length > 0) {
+                    loadTimeline(users[0].user);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadTimeline(userId) {
+            try {
+                const res = await fetch(`/api/user/${userId}/timeline`);
+                const timeline = await res.json();
+
+                const labels = timeline.map(t => t.day);
+                const scores = timeline.map(t => t.risk_score);
+
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                if(chartInstance) chartInstance.destroy();
+
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `${userId} Risk Trend`,
+                            data: scores,
+                            borderColor: '#00f2fe',
+                            backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        function inspectUser(userId, explanation) {
+            document.getElementById('modalUserTitle').innerText = `${userId} - Risk Attribution Analysis`;
+            document.getElementById('modalExplanationText').innerText = explanation;
+            document.getElementById('xaiModal').style.display = 'flex';
+            loadTimeline(userId);
+        }
+
+        function closeModal() {
+            document.getElementById('xaiModal').style.display = 'none';
+        }
+
+        fetchKPIs();
+        fetchUsers();
+    </script>
+</body>
+</html>
