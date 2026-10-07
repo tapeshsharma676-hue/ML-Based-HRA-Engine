@@ -1,8 +1,8 @@
 """
-AHRE Security Dashboard Backend API & Web Server (Member 3 Module)
+AHRE Security Dashboard Backend API & Web Server
 """
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, render_template, request
 import pandas as pd
 import os
 
@@ -26,10 +26,13 @@ def get_kpi():
     if df.empty:
         return jsonify({"total_users": 0, "critical_threats": 0, "avg_risk": 0, "total_events": 0})
     
-    total_users = df['user'].nunique()
-    critical = df[df['risk_category'] == 'CRITICAL']['user'].nunique()
-    avg_risk = round(df['risk_score'].mean(), 1)
-    total_events = int(df['total_logons'].sum() + df['usb_connect_count'].sum())
+    total_users = int(df['user'].nunique())
+    # Count unique users having CRITICAL risk in their latest profile
+    latest_df = df.sort_values(by=['day', 'risk_score'], ascending=[False, False]).groupby('user').first().reset_index()
+    critical = int(latest_df[latest_df['risk_category'] == 'CRITICAL']['user'].nunique())
+    avg_risk = round(float(latest_df['risk_score'].mean()), 1)
+    
+    total_events = int(df['total_logons'].sum() + df['usb_connect_count'].sum() + df.get('total_file_access', df.get('file_copy_count', 0)).sum())
     
     return jsonify({
         "total_users": total_users,
@@ -48,7 +51,10 @@ def get_user_risk():
     latest_df = df.sort_values(by=['day', 'risk_score'], ascending=[False, False]).groupby('user').first().reset_index()
     latest_df = latest_df.sort_values(by='risk_score', ascending=False)
     
-    result = latest_df[['user', 'day', 'risk_score', 'risk_category', 'failed_logins', 'off_hours_logins', 'usb_connect_count', 'file_copy_count', 'explanation']].to_dict(orient='records')
+    cols = ['user', 'day', 'risk_score', 'risk_category', 'failed_logins', 'off_hours_logins', 'usb_connect_count', 'file_copy_count', 'explanation']
+    available_cols = [c for c in cols if c in latest_df.columns]
+    
+    result = latest_df[available_cols].to_dict(orient='records')
     return jsonify(result)
 
 @app.route('/api/user/<user_id>/timeline')
@@ -58,7 +64,10 @@ def get_user_timeline(user_id):
         return jsonify([])
     
     user_df = df[df['user'] == user_id].sort_values(by='day')
-    result = user_df[['day', 'risk_score', 'risk_category', 'failed_logins', 'usb_connect_count']].to_dict(orient='records')
+    cols = ['day', 'risk_score', 'risk_category', 'failed_logins', 'usb_connect_count']
+    available_cols = [c for c in cols if c in user_df.columns]
+    
+    result = user_df[available_cols].to_dict(orient='records')
     return jsonify(result)
 
 if __name__ == '__main__':

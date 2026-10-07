@@ -3,21 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AHRE - Adaptive Human Risk Engine</title>
+    <title>AHRE - Adaptive Human Risk Engine | SOC Security Dashboard</title>
     <!-- Google Fonts & Chart.js -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-dark: #0b0f19;
-            --card-bg: rgba(18, 26, 44, 0.75);
+            --bg-dark: #070a12;
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --card-bg-hover: rgba(26, 38, 66, 0.85);
             --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(0, 242, 254, 0.3);
             --accent-cyan: #00f2fe;
             --accent-blue: #4facfe;
-            --text-primary: #f1f5f9;
-            --text-muted: #94a3b8;
+            --accent-purple: #7928ca;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
             --critical-red: #ff4757;
+            --critical-glow: rgba(255, 71, 87, 0.4);
             --high-orange: #ffa502;
             --medium-yellow: #eccc68;
             --low-green: #2ed573;
@@ -35,11 +40,14 @@
             color: var(--text-primary);
             min-height: 100vh;
             background-image: 
-                radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(255, 71, 87, 0.08) 0%, transparent 40%);
+                radial-gradient(circle at 10% 10%, rgba(0, 242, 254, 0.07) 0%, transparent 45%),
+                radial-gradient(circle at 90% 90%, rgba(255, 71, 87, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(121, 40, 202, 0.04) 0%, transparent 60%);
             padding: 24px;
+            background-attachment: fixed;
         }
 
+        /* Header Navigation Bar */
         .header {
             display: flex;
             justify-content: space-between;
@@ -47,24 +55,26 @@
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
 
         .logo-title {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
         .shield-icon {
-            width: 42px;
-            height: 42px;
+            width: 48px;
+            height: 48px;
             background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+            font-size: 24px;
+            box-shadow: 0 0 24px rgba(0, 242, 254, 0.4);
         }
 
         .header h1 {
@@ -81,6 +91,12 @@
             color: var(--text-muted);
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .status-badge {
             display: flex;
             align-items: center;
@@ -91,6 +107,7 @@
             border-radius: 20px;
             font-size: 13px;
             color: var(--low-green);
+            font-weight: 500;
         }
 
         .pulse-dot {
@@ -98,17 +115,71 @@
             height: 8px;
             background: var(--low-green);
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--low-green);
+            box-shadow: 0 0 10px var(--low-green);
             animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
+            0% { opacity: 0.3; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.3; transform: scale(0.9); }
         }
 
-        /* KPI Grid */
+        .btn-header {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-header:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--accent-cyan);
+            color: #fff;
+        }
+
+        /* Threat Banner Ticker */
+        .alert-banner {
+            background: linear-gradient(90deg, rgba(255, 71, 87, 0.15), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-left: 4px solid var(--critical-red);
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+        }
+
+        .alert-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .alert-tag {
+            background: var(--critical-red);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* KPI Section */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -119,39 +190,101 @@
         .kpi-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
             padding: 20px;
-            border-radius: 14px;
-            transition: transform 0.2s, border-color 0.2s;
+            border-radius: 16px;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+            opacity: 0.5;
         }
 
         .kpi-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
             border-color: rgba(0, 242, 254, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .kpi-title {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
             margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
         .kpi-value {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kpi-subtext {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Controls / Search Bar */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            outline: none;
+            width: 220px;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .filter-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .filter-select option {
+            background: #0f172a;
+            color: #fff;
         }
 
         /* Main Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1.6fr 1fr;
             gap: 20px;
         }
 
-        @media (max-width: 992px) {
+        @media (max-width: 1024px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
@@ -160,9 +293,10 @@
         .panel {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            backdrop-filter: blur(12px);
-            border-radius: 14px;
+            backdrop-filter: blur(14px);
+            border-radius: 16px;
             padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
         .panel-header {
@@ -170,33 +304,62 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
-            padding-bottom: 10px;
+            padding-bottom: 12px;
             border-bottom: 1px solid var(--border-color);
         }
 
         .panel-title {
             font-size: 16px;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* User Table */
+        .table-container {
+            overflow-x: auto;
+            max-height: 440px;
+            overflow-y: auto;
+        }
+
         .user-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .user-table th {
             text-align: left;
             padding: 12px;
             color: var(--text-muted);
-            font-weight: 500;
+            font-weight: 600;
             border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 10;
         }
 
         .user-table td {
             padding: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: middle;
+        }
+
+        .user-table tr {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .user-table tr:hover {
+            background: var(--card-bg-hover);
+        }
+
+        .user-table tr.selected-row {
+            background: rgba(0, 242, 254, 0.08);
+            border-left: 3px solid var(--accent-cyan);
         }
 
         .user-id {
@@ -209,31 +372,52 @@
             padding: 4px 10px;
             border-radius: 12px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: inline-block;
         }
 
-        .badge-CRITICAL { background: rgba(255, 71, 87, 0.2); color: var(--critical-red); border: 1px solid rgba(255, 71, 87, 0.4); }
-        .badge-HIGH { background: rgba(255, 165, 2, 0.2); color: var(--high-orange); border: 1px solid rgba(255, 165, 2, 0.4); }
-        .badge-MEDIUM { background: rgba(236, 204, 104, 0.2); color: var(--medium-yellow); border: 1px solid rgba(236, 204, 104, 0.4); }
-        .badge-LOW { background: rgba(46, 213, 115, 0.2); color: var(--low-green); border: 1px solid rgba(46, 213, 115, 0.4); }
+        .badge-CRITICAL { 
+            background: rgba(255, 71, 87, 0.18); 
+            color: var(--critical-red); 
+            border: 1px solid rgba(255, 71, 87, 0.4); 
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.2);
+        }
+        .badge-HIGH { 
+            background: rgba(255, 165, 2, 0.18); 
+            color: var(--high-orange); 
+            border: 1px solid rgba(255, 165, 2, 0.4); 
+        }
+        .badge-MEDIUM { 
+            background: rgba(236, 204, 104, 0.18); 
+            color: var(--medium-yellow); 
+            border: 1px solid rgba(236, 204, 104, 0.4); 
+        }
+        .badge-LOW { 
+            background: rgba(46, 213, 115, 0.18); 
+            color: var(--low-green); 
+            border: 1px solid rgba(46, 213, 115, 0.4); 
+        }
+
+        .score-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
         .score-bar-bg {
-            width: 80px;
+            width: 70px;
             height: 6px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 3px;
             overflow: hidden;
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: middle;
         }
 
         .score-bar-fill {
             height: 100%;
             border-radius: 3px;
+            transition: width 0.4s ease;
         }
 
         .btn-inspect {
@@ -242,35 +426,45 @@
             border: 1px solid rgba(0, 242, 254, 0.3);
             padding: 5px 12px;
             border-radius: 6px;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
         }
 
         .btn-inspect:hover {
             background: rgba(0, 242, 254, 0.25);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
         }
 
-        /* Modal */
+        /* Modal Overlay & Card */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(5, 8, 15, 0.85);
+            backdrop-filter: blur(10px);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .modal-content {
-            background: #131b2e;
-            border: 1px solid var(--accent-cyan);
-            border-radius: 16px;
-            width: 500px;
-            max-width: 90%;
-            padding: 24px;
-            box-shadow: 0 0 30px rgba(0, 242, 254, 0.2);
+            background: #0f172a;
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            border-radius: 18px;
+            width: 580px;
+            max-width: 92%;
+            padding: 28px;
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.25);
         }
 
         .modal-header {
@@ -278,94 +472,205 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .modal-close {
-            background: none;
-            border: none;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
             color: var(--text-muted);
-            font-size: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--critical-red);
         }
 
         .explanation-box {
-            background: rgba(255, 71, 87, 0.1);
+            background: rgba(255, 71, 87, 0.08);
             border: 1px solid rgba(255, 71, 87, 0.3);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 16px;
-            color: #ff6b81;
-            margin-top: 12px;
+            color: #ff8597;
+            margin-top: 14px;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .modal-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .metric-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        /* Architecture Modal Specifics */
+        .arch-step {
+            margin-bottom: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            border-radius: 10px;
+        }
+
+        .arch-title {
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .arch-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-cyan);
         }
     </style>
 </head>
 <body>
 
+    <!-- Main Header -->
     <div class="header">
         <div class="logo-title">
             <div class="shield-icon">🛡️</div>
             <div>
                 <h1>Adaptive Human Risk Engine (AHRE)</h1>
-                <p>Real-Time User Behavioral Profiling & Dynamic Risk Scoring</p>
+                <p>Unsupervised Machine Learning & Explainable AI Cyber-Risk Profiler</p>
             </div>
         </div>
-        <div class="status-badge">
-            <div class="pulse-dot"></div> Engine Active & Monitoring
+        <div class="header-actions">
+            <button class="btn-header" onclick="openArchModal()">
+                ℹ️ Architecture Details
+            </button>
+            <div class="status-badge">
+                <div class="pulse-dot"></div> IsolationForest Engine Active
+            </div>
         </div>
     </div>
 
-    <!-- KPI Section -->
+    <!-- Insider Threat Warning Banner -->
+    <div class="alert-banner" id="alertBanner">
+        <div class="alert-text">
+            <span class="alert-tag">INSIDER THREAT DETECTED</span>
+            <span><strong>USER0007</strong> reached <strong>CRITICAL Risk Score (100 / 100)</strong> due to concurrent Off-Hours Logins, USB Exfiltration, and Failed Access Attempts.</span>
+        </div>
+        <button class="btn-inspect" onclick="inspectUserById('USER0007')">View XAI Explanation</button>
+    </div>
+
+    <!-- KPI Metrics Section -->
     <div class="kpi-grid">
         <div class="kpi-card">
             <div class="kpi-title">Monitored Users</div>
             <div class="kpi-value" id="kpi-users">--</div>
+            <div class="kpi-subtext">CERT Synthetic Logs Dataset</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-title">Critical Threats</div>
             <div class="kpi-value" style="color: var(--critical-red);" id="kpi-critical">--</div>
+            <div class="kpi-subtext">Risk Score ≥ 75 / 100</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-title">Average Risk Score</div>
+            <div class="kpi-title">Average Fleet Risk</div>
             <div class="kpi-value" style="color: var(--accent-cyan);" id="kpi-avg">--</div>
+            <div class="kpi-subtext">Normalized Score Metric</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-title">Total Logged Events</div>
+            <div class="kpi-title">Total Processed Events</div>
             <div class="kpi-value" id="kpi-events">--</div>
+            <div class="kpi-subtext">Logon, Device & File Logs</div>
         </div>
     </div>
 
-    <!-- Main Grid -->
+    <!-- Main Dashboard Grid -->
     <div class="dashboard-grid">
-        <!-- User Risk Rankings -->
+        <!-- User Risk Profiles & Table -->
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">⚠️ User Threat Profiles & Risk Rankings</div>
+                <div class="panel-title">⚠️ User Threat Profiles & Dynamic Risk Rankings</div>
             </div>
-            <table class="user-table">
-                <thead>
-                    <tr>
-                        <th>User ID</th>
-                        <th>Risk Category</th>
-                        <th>Dynamic Risk Score</th>
-                        <th>Off-Hours</th>
-                        <th>Failed Logins</th>
-                        <th>USB Connections</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="user-table-body">
-                    <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading user profiles...</td></tr>
-                </tbody>
-            </table>
+
+            <!-- Table Controls -->
+            <div class="table-controls">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search User ID..." oninput="filterTable()">
+                <select class="filter-select" id="riskFilter" onchange="filterTable()">
+                    <option value="ALL">All Risk Levels</option>
+                    <option value="CRITICAL">Critical Only</option>
+                    <option value="HIGH">High Only</option>
+                    <option value="MEDIUM">Medium Only</option>
+                    <option value="LOW">Low Only</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Risk Category</th>
+                            <th>Dynamic Risk Score</th>
+                            <th>Off-Hours</th>
+                            <th>Failed Logins</th>
+                            <th>USB Devices</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body">
+                        <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">Loading user profiles...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Risk Timeline Chart -->
+        <!-- Selected User Timeline Chart -->
         <div class="panel">
             <div class="panel-header">
-                <div class="panel-title">📈 Selected User Risk Trend</div>
+                <div class="panel-title">📈 Dynamic Risk Trend Line (<span id="selectedUserLabel" style="color: var(--accent-cyan);">USER0007</span>)</div>
             </div>
-            <canvas id="timelineChart" height="220"></canvas>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Daily baseline anomaly deviation progression over 30 days:</p>
+            <canvas id="timelineChart" height="240"></canvas>
+            <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px; color: var(--text-secondary);">
+                💡 <strong>Tip for Mentor Demo:</strong> Click any user row in the threat table to update this real-time risk trajectory chart instantly.
+            </div>
         </div>
     </div>
 
@@ -373,18 +678,66 @@
     <div class="modal-overlay" id="xaiModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="color: var(--accent-cyan);" id="modalUserTitle">USER0007 Risk Analysis</h3>
-                <button class="modal-close" onclick="closeModal()">✕</button>
+                <h3 style="color: var(--accent-cyan); font-size: 18px;" id="modalUserTitle">USER Risk Attribution</h3>
+                <button class="modal-close" onclick="closeModal('xaiModal')">✕</button>
             </div>
-            <p style="color: var(--text-muted); font-size: 14px;">Explainable AI (XAI) Attribution Breakdown:</p>
+            <p style="color: var(--text-muted); font-size: 13px;">Explainable AI (XAI) Root-Cause Attribution Engine:</p>
+            
             <div class="explanation-box" id="modalExplanationText">
                 Analyzing risk factors...
+            </div>
+
+            <div class="modal-metrics-grid" id="modalMetricsGrid">
+                <!-- Dynamic Chips -->
+            </div>
+            <div style="margin-top: 16px; text-align: right;">
+                <button class="btn-inspect" onclick="closeModal('xaiModal')">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture Modal -->
+    <div class="modal-overlay" id="archModal">
+        <div class="modal-content" style="width: 650px;">
+            <div class="modal-header">
+                <h3 style="color: var(--accent-cyan); font-size: 18px;">AHRE Project System Architecture</h3>
+                <button class="modal-close" onclick="closeModal('archModal')">✕</button>
+            </div>
+            
+            <div class="arch-step">
+                <div class="arch-title">Step 1: Synthetic CERT Ingestion Engine</div>
+                <div class="arch-desc">Parses enterprise CSV logs (`logon.csv`, `device.csv`, `file.csv`) aggregating daily user behavioral vectors.</div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-title">Step 2: Feature Engineering Matrix</div>
+                <div class="arch-desc">Computes 6 key behavioral features: `off_hours_logins`, `failed_logins`, `usb_connect_count`, `file_copy_count`, `total_file_access`, `total_logons`.</div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-title">Step 3: IsolationForest ML Model (Unsupervised)</div>
+                <div class="arch-desc">Calculates anomaly decision scores based on path length isolation across 100 decision trees (`contamination=0.08`).</div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-title">Step 4: Dynamic Risk Normalization (0-100)</div>
+                <div class="arch-desc">Maps raw IsolationForest anomaly scores to an intuitive 0–100 cybersecurity threat scale, categorized into LOW, MEDIUM, HIGH, and CRITICAL.</div>
+            </div>
+
+            <div class="arch-step">
+                <div class="arch-title">Step 5: Explainable AI (XAI) Attribution</div>
+                <div class="arch-desc">Converts mathematical feature distance into human-understandable security root-cause explanations for SOC Analysts.</div>
+            </div>
+
+            <div style="margin-top: 16px; text-align: right;">
+                <button class="btn-inspect" onclick="closeModal('archModal')">Close Architecture</button>
             </div>
         </div>
     </div>
 
     <script>
         let chartInstance = null;
+        let cachedUsers = [];
 
         async function fetchKPIs() {
             try {
@@ -400,37 +753,77 @@
         async function fetchUsers() {
             try {
                 const res = await fetch('/api/users');
-                const users = await res.json();
-                const tbody = document.getElementById('user-table-body');
-                tbody.innerHTML = '';
+                cachedUsers = await res.json();
+                renderTable(cachedUsers);
 
-                users.forEach(u => {
-                    let color = u.risk_score >= 75 ? 'var(--critical-red)' : 
-                               (u.risk_score >= 50 ? 'var(--high-orange)' : 
-                               (u.risk_score >= 25 ? 'var(--medium-yellow)' : 'var(--low-green)'));
+                if(cachedUsers.length > 0) {
+                    // Default select top critical user (USER0007 if present)
+                    const topUser = cachedUsers.find(u => u.user === 'USER0007') || cachedUsers[0];
+                    selectUser(topUser.user);
+                }
+            } catch(e) { console.error(e); }
+        }
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="user-id">${u.user}</td>
-                        <td><span class="badge badge-${u.risk_category}">${u.risk_category}</span></td>
-                        <td>
+        function renderTable(users) {
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">No matching user risk profiles found.</td></tr>`;
+                return;
+            }
+
+            users.forEach(u => {
+                let color = u.risk_score >= 75 ? 'var(--critical-red)' : 
+                           (u.risk_score >= 50 ? 'var(--high-orange)' : 
+                           (u.risk_score >= 25 ? 'var(--medium-yellow)' : 'var(--low-green)'));
+
+                const tr = document.createElement('tr');
+                tr.id = `row-${u.user}`;
+                tr.onclick = () => selectUser(u.user);
+
+                tr.innerHTML = `
+                    <td class="user-id">${u.user}</td>
+                    <td><span class="badge badge-${u.risk_category}">${u.risk_category}</span></td>
+                    <td>
+                        <div class="score-container">
                             <div class="score-bar-bg">
                                 <div class="score-bar-fill" style="width: ${u.risk_score}%; background: ${color};"></div>
                             </div>
-                            <span style="font-family: 'JetBrains Mono'; font-weight: 600; color: ${color}">${u.risk_score}</span>
-                        </td>
-                        <td>${u.off_hours_logins}</td>
-                        <td>${u.failed_logins}</td>
-                        <td>${u.usb_connect_count}</td>
-                        <td><button class="btn-inspect" onclick="inspectUser('${u.user}', '${u.explanation}')">XAI Explain</button></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                            <span style="font-family: 'JetBrains Mono'; font-weight: 700; color: ${color}">${u.risk_score}</span>
+                        </div>
+                    </td>
+                    <td>${u.off_hours_logins}</td>
+                    <td>${u.failed_logins}</td>
+                    <td>${u.usb_connect_count}</td>
+                    <td>
+                        <button class="btn-inspect" onclick="event.stopPropagation(); inspectUser('${u.user}')">XAI Explain</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-                if(users.length > 0) {
-                    loadTimeline(users[0].user);
-                }
-            } catch(e) { console.error(e); }
+        function filterTable() {
+            const search = document.getElementById('searchBox').value.toUpperCase();
+            const filter = document.getElementById('riskFilter').value;
+
+            const filtered = cachedUsers.filter(u => {
+                const matchesSearch = u.user.toUpperCase().includes(search);
+                const matchesRisk = (filter === 'ALL') || (u.risk_category === filter);
+                return matchesSearch && matchesRisk;
+            });
+
+            renderTable(filtered);
+        }
+
+        function selectUser(userId) {
+            document.querySelectorAll('.user-table tr').forEach(r => r.classList.remove('selected-row'));
+            const selectedRow = document.getElementById(`row-${userId}`);
+            if(selectedRow) selectedRow.classList.add('selected-row');
+
+            document.getElementById('selectedUserLabel').innerText = userId;
+            loadTimeline(userId);
         }
 
         async function loadTimeline(userId) {
@@ -449,36 +842,72 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: `${userId} Risk Trend`,
+                            label: `${userId} Risk Progression`,
                             data: scores,
                             borderColor: '#00f2fe',
-                            backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                            backgroundColor: 'rgba(0, 242, 254, 0.08)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#00f2fe',
+                            pointHoverRadius: 6,
                             fill: true,
-                            tension: 0.4
+                            tension: 0.35
                         }]
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
                         scales: {
-                            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                            y: { 
+                                min: 0, max: 100, 
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }
+                            },
+                            x: { 
+                                grid: { color: 'rgba(255,255,255,0.03)' },
+                                ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+                            }
                         }
                     }
                 });
             } catch(e) { console.error(e); }
         }
 
-        function inspectUser(userId, explanation) {
-            document.getElementById('modalUserTitle').innerText = `${userId} - Risk Attribution Analysis`;
-            document.getElementById('modalExplanationText').innerText = explanation;
+        function inspectUser(userId) {
+            const userObj = cachedUsers.find(u => u.user === userId);
+            if(!userObj) return;
+
+            document.getElementById('modalUserTitle').innerText = `${userObj.user} Risk Attribution & Analysis`;
+            document.getElementById('modalExplanationText').innerText = userObj.explanation || "Normal behavioral pattern detected.";
+            
+            const grid = document.getElementById('modalMetricsGrid');
+            grid.innerHTML = `
+                <div class="metric-chip"><span>Off-Hours Logins:</span> <strong>${userObj.off_hours_logins}</strong></div>
+                <div class="metric-chip"><span>Failed Logins:</span> <strong>${userObj.failed_logins}</strong></div>
+                <div class="metric-chip"><span>USB Connected:</span> <strong>${userObj.usb_connect_count}</strong></div>
+                <div class="metric-chip"><span>File Copy Operations:</span> <strong>${userObj.file_copy_count}</strong></div>
+            `;
+
             document.getElementById('xaiModal').style.display = 'flex';
-            loadTimeline(userId);
+            selectUser(userId);
         }
 
-        function closeModal() {
-            document.getElementById('xaiModal').style.display = 'none';
+        function inspectUserById(userId) {
+            selectUser(userId);
+            inspectUser(userId);
         }
 
+        function openArchModal() {
+            document.getElementById('archModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Initialize dashboard
         fetchKPIs();
         fetchUsers();
     </script>
