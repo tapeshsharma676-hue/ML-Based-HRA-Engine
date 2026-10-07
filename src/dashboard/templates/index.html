@@ -282,6 +282,7 @@
             display: grid;
             grid-template-columns: 1.6fr 1fr;
             gap: 20px;
+            align-items: start;
         }
 
         @media (max-width: 1024px) {
@@ -297,6 +298,7 @@
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
         }
 
         .panel-header {
@@ -319,7 +321,7 @@
         /* User Table */
         .table-container {
             overflow-x: auto;
-            max-height: 440px;
+            max-height: 420px;
             overflow-y: auto;
         }
 
@@ -437,6 +439,14 @@
             background: rgba(0, 242, 254, 0.25);
             border-color: var(--accent-cyan);
             box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        }
+
+        /* Chart Wrapper Container (Fixes Chart.js Infinite Expansion Bug) */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            max-height: 280px;
         }
 
         /* Modal Overlay & Card */
@@ -667,7 +677,12 @@
                 <div class="panel-title">📈 Dynamic Risk Trend Line (<span id="selectedUserLabel" style="color: var(--accent-cyan);">USER0007</span>)</div>
             </div>
             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Daily baseline anomaly deviation progression over 30 days:</p>
-            <canvas id="timelineChart" height="240"></canvas>
+            
+            <!-- Fixed Height Container to prevent Chart.js infinite resize loop -->
+            <div class="chart-wrapper">
+                <canvas id="timelineChart"></canvas>
+            </div>
+
             <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px; color: var(--text-secondary);">
                 💡 <strong>Tip for Mentor Demo:</strong> Click any user row in the threat table to update this real-time risk trajectory chart instantly.
             </div>
@@ -757,7 +772,6 @@
                 renderTable(cachedUsers);
 
                 if(cachedUsers.length > 0) {
-                    // Default select top critical user (USER0007 if present)
                     const topUser = cachedUsers.find(u => u.user === 'USER0007') || cachedUsers[0];
                     selectUser(topUser.user);
                 }
